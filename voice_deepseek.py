@@ -3,16 +3,21 @@ import sounddevice as sd
 import pyttsx3
 import subprocess
 import re
-from hindi import text
+import numpy as np
 
 
 model="deepseek-r1"
 
 engine = pyttsx3.init()
-
+mode=True
 def speak(cleaned_output):
-    engine.say(cleaned_output)
-    engine.runAndWait()
+    engine.setProperty('rate', 150)
+    if mode:
+        print("======***")
+        engine.say(cleaned_output)
+        engine.runAndWait()
+    else:
+        engine.stop()
 
 def listen():
     print("speech")
@@ -24,7 +29,7 @@ def listen():
         try:
             g_text = recognizer.recognize_google(audio)
             print("=====",g_text)
-            return text
+            return g_text
         except sr.UnknownValueError:
             print("Sorry, I could not understand what you said")
             return None
@@ -45,10 +50,33 @@ while True:
     if text.upper()=="BREAK": 
         print("=====")
         break
-    # else:
-    #     speak(auto_answer(text))
+    else:
+        speak(auto_answer(text))
 
 
+
+
+def check_for_sound(indata):
+    """Function to check if sound (or speech) is detected by calculating the volume."""
+    # Calculate the volume (magnitude) of the audio data
+    volume_norm = np.linalg.norm(indata) * 10  # Increase the multiplier for sensitivity
+    
+    if volume_norm > 500:
+        return True
+    else:
+        return False
+
+def audio_callback(indata, frames, time, status):
+    """Callback function to process the audio data and detect sound."""
+    if status:
+        print(status, flush=True)
+    
+    # Check if sound is detected based on the volume
+    if check_for_sound(indata):
+        print("Sound detected!")
+        speak("Sound detected!")  # Respond via TTS
+    else:
+        print("No sound detected.")
 
 # if user_input == 'exit':
 #             break
@@ -59,6 +87,8 @@ while True:
 #             listening = True  # Resume listening
 #             speak("Resuming listening...")
 
+
+# recognizer = sr.Recognizer()
 
 # while True:
 #     with sr.Microphone() as source:
@@ -75,13 +105,14 @@ while True:
 #                 break
 #             else:
 #                 engine = pyttsx3.init()
-#                  r=subprocess.run(['ollama','run',model,text],capture_output=True,text=True)
+#                 r=subprocess.run(['ollama','run',model,text],capture_output=True,text=True)
 #                 engine.setProperty('rate', 150)  
 #                 engine.setProperty('volume', 1) 
 #                 cleaned_output = re.sub(r'<.*?>','',r.stdout)
 #                 cleaned_output=cleaned_output.replace('**', ' ')
 #                 print(cleaned_output)
-#                 speak(cleaned_output)
+#                 engine.say(cleaned_output)
+#                 engine.runAndWait()
 
 #         except sr.UnknownValueError:
 #             print("Sorry, I could not understand what you said.")
